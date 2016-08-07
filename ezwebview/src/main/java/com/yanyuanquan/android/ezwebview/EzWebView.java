@@ -1,6 +1,7 @@
 package com.yanyuanquan.android.ezwebview;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -10,6 +11,9 @@ import android.hardware.display.DisplayManager;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -30,6 +34,7 @@ public class EzWebView extends FrameLayout {
     private int backgroundColor = 0x00000000;
     private Paint progressPaint;
     private float currentProgress = 0;
+    private View errorView;
 
     public EzWebView(Context context) {
         this(context, null);
@@ -46,13 +51,38 @@ public class EzWebView extends FrameLayout {
     }
 
     private void init(AttributeSet attrs) {
-        progressPaint = new Paint();
-        progressPaint.setAntiAlias(true);
-        progressPaint.setColor(Color.RED);
         webView = new WebView(getContext().getApplicationContext());
         this.addView(webView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
         webView.setWebChromeClient(chromeClient);
         webView.setWebViewClient(client);
+        initAttrs(attrs);
+    }
+
+    @SuppressWarnings("ResourceType")
+    private void initAttrs(AttributeSet attrs) {
+        TypedArray ta = getResources().obtainAttributes(attrs, R.styleable.EzWebView);
+
+        try {
+            int errorLayoutId = getErrorLayoutId() != 0 ? getErrorLayoutId()
+                    : (ta.getResourceId(R.styleable.EzWebView_ErrorLayoutId, 0) != 0
+                    ? (ta.getResourceId(R.styleable.EzWebView_ErrorLayoutId, 0)) : R.layout.empty_view);
+
+            errorView = LayoutInflater.from(getContext()).inflate(errorLayoutId, null);
+            errorView.setVisibility(GONE);
+            this.addView(errorView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+            foregroundColor = ta.getColor(R.styleable.EzWebView_ForegroundColor, foregroundColor);
+            // TODO: 16/8/7  暂未绘制进度条背景
+            backgroundColor = ta.getColor(R.styleable.EzWebView_BackgroundColor,backgroundColor);
+            progressWidth = (int) ta.getDimension(R.styleable.EzWebView_ProgressWidth,progressWidth);
+            progressPaint = new Paint();
+            progressPaint.setAntiAlias(true);
+            progressPaint.setColor(foregroundColor);
+
+
+        } finally {
+            ta.recycle();
+        }
+
     }
 
 
@@ -67,9 +97,7 @@ public class EzWebView extends FrameLayout {
         @Override
         public void onProgressChanged(WebView view, int newProgress) {
             super.onProgressChanged(view, newProgress);
-            if (newProgress>=100){
-//                currentProgress=0;
-            }else {
+            if (newProgress <= 100) {
                 currentProgress = newProgress * 0.01f;
                 Log.e("zjw", "  currentProgress   :  " + newProgress);
                 invalidate(getReact());
@@ -87,16 +115,16 @@ public class EzWebView extends FrameLayout {
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            currentProgress=100;
+            currentProgress = 100;
             invalidate();
             postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    Log.e("zjw","        finish         ");
-                    currentProgress=0;
+                    Log.e("zjw", "        finish         ");
+                    currentProgress = 0;
                     invalidate(getReact());
                 }
-            },300);
+            }, 200);
         }
 
         @Override
@@ -105,9 +133,15 @@ public class EzWebView extends FrameLayout {
         }
 
         @Override
-        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-            return super.shouldOverrideUrlLoading(view, request);
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            return super.shouldOverrideUrlLoading(view, url);
         }
+
+        @Override
+        public boolean shouldOverrideKeyEvent(WebView view, KeyEvent event) {
+            return super.shouldOverrideKeyEvent(view, event);
+        }
+
     };
 
 
@@ -168,5 +202,23 @@ public class EzWebView extends FrameLayout {
 
     public int getFRY() {
         return direction == 3 || direction == 4 ? (getHeight()) : (direction == 1 ? progressWidth : getHeight());
+    }
+
+    public WebView getWebView() {
+        return webView;
+    }
+
+    public void reload() {
+        if (webView != null)
+            webView.reload();
+    }
+
+    public void destory() {
+        if (webView != null)
+            webView.destroy();
+    }
+
+    public int getErrorLayoutId() {
+        return 0;
     }
 }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="EzWebView">
+        <attr name="ErrorLayoutId" format="reference|integer"/>
+        <attr name="ForegroundColor" format="color|reference"/>
+        <attr name="BackgroundColor" format="color|reference"/>
+        <attr name="ProgressWidth" format="dimension|reference"/>
+
+    </declare-styleable>
+</resources>

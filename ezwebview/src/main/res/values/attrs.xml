@@ -5,6 +5,12 @@
         <attr name="ForegroundColor" format="color|reference"/>
         <attr name="BackgroundColor" format="color|reference"/>
         <attr name="ProgressWidth" format="dimension|reference"/>
+        <attr name="Direction" format="integer">
+            <enum name="Top" value="1"/>
+            <enum name="Bottom" value="2"/>
+            <enum name="Left" value="3"/>
+            <enum name="Right" value="4"/>
+        </attr>
 
     </declare-styleable>
 </resources>

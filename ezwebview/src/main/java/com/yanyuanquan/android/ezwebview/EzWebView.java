@@ -28,7 +28,7 @@ import android.widget.FrameLayout;
 public class EzWebView extends FrameLayout {
 
     private WebView webView;
-    private int progressWidth = 10;
+    private int progressWidth = 4;
     private int direction = 1;
     private int foregroundColor = 0xffff0000;
     private int backgroundColor = 0x00000000;
@@ -72,12 +72,12 @@ public class EzWebView extends FrameLayout {
             this.addView(errorView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
             foregroundColor = ta.getColor(R.styleable.EzWebView_ForegroundColor, foregroundColor);
             // TODO: 16/8/7  暂未绘制进度条背景
-            backgroundColor = ta.getColor(R.styleable.EzWebView_BackgroundColor,backgroundColor);
-            progressWidth = (int) ta.getDimension(R.styleable.EzWebView_ProgressWidth,progressWidth);
+            backgroundColor = ta.getColor(R.styleable.EzWebView_BackgroundColor, backgroundColor);
+            progressWidth = (int) ta.getDimension(R.styleable.EzWebView_ProgressWidth, progressWidth);
+            direction = ta.getInt(R.styleable.EzWebView_Direction, 1);
             progressPaint = new Paint();
             progressPaint.setAntiAlias(true);
             progressPaint.setColor(foregroundColor);
-
 
         } finally {
             ta.recycle();
@@ -116,7 +116,7 @@ public class EzWebView extends FrameLayout {
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
             currentProgress = 100;
-            invalidate();
+            invalidate(getReact());
             postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -155,10 +155,6 @@ public class EzWebView extends FrameLayout {
 
 
     private void drawPregress(Canvas canvas) {
-        Log.e("zjw", "LX  :  " + getLX());
-        Log.e("zjw", "LY  :  " + getLY());
-        Log.e("zjw", "RX  :  " + getRX());
-        Log.e("zjw", "RY  :  " + getRY());
 
         Rect rect = new Rect(getLX(), getLY(), getRX(), getRY());
         canvas.drawRect(rect, progressPaint);

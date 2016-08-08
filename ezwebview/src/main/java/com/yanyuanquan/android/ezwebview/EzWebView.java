@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
+import android.net.http.SslError;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -15,8 +16,11 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
@@ -25,7 +29,7 @@ import android.widget.FrameLayout;
  * Created by apple on 16/8/5.
  */
 
-public class EzWebView extends FrameLayout {
+public class EzWebView extends FrameLayout implements View.OnClickListener {
 
     private WebView webView;
     private int progressWidth = 4;
@@ -35,6 +39,7 @@ public class EzWebView extends FrameLayout {
     private Paint progressPaint;
     private float currentProgress = 0;
     private View errorView;
+    private boolean isError = false;
 
     public EzWebView(Context context) {
         this(context, null);
@@ -83,6 +88,9 @@ public class EzWebView extends FrameLayout {
             ta.recycle();
         }
 
+        if (errorView != null && errorView.findViewById(R.id.retry) != null) {
+            errorView.setOnClickListener(this);
+        }
     }
 
 
@@ -102,6 +110,9 @@ public class EzWebView extends FrameLayout {
                 Log.e("zjw", "  currentProgress   :  " + newProgress);
                 invalidate(getReact());
             }
+            if (newProgress >= 100 && isError) {
+                showErrorView();
+            }
         }
 
         @Override
@@ -120,21 +131,32 @@ public class EzWebView extends FrameLayout {
             postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    Log.e("zjw", "        finish         ");
                     currentProgress = 0;
                     invalidate(getReact());
                 }
             }, 200);
+
+
+            if (isError) {
+                showErrorView();
+            } else {
+                showSuccessView();
+            }
+            Log.e("zjw", "  onPageFinsh   ");
         }
 
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             super.onPageStarted(view, url, favicon);
+            Log.e("zjw", "  onPageStart   ");
         }
 
         @Override
-        public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            return super.shouldOverrideUrlLoading(view, url);
+        public boolean shouldOverrideUrlLoading(WebView v, String url) {
+            v.loadUrl(url);
+            showSuccessView();
+            Log.e("zjw", "     shouldOverrideUrlLoading      ");
+            return true;
         }
 
         @Override
@@ -142,8 +164,37 @@ public class EzWebView extends FrameLayout {
             return super.shouldOverrideKeyEvent(view, event);
         }
 
-    };
+        @Override
+        public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+            super.onReceivedError(view, request, error);
+            isError = true;
+            Log.e("zjw", "   error1   " + error.toString());
+        }
 
+        @Override
+        public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
+            super.onReceivedHttpError(view, request, errorResponse);
+            isError = true;
+            Log.e("zjw", "   error 2  " + errorResponse.toString());
+
+        }
+
+        @Override
+        public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+            super.onReceivedSslError(view, handler, error);
+            Log.e("zjw", "   error3   " + error.toString());
+            isError = true;
+        }
+
+        @Override
+        public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+            super.onReceivedError(view, errorCode, description, failingUrl);
+            isError = true;
+            Log.e("zjw", "   error4   " + errorCode);
+        }
+
+
+    };
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
@@ -154,17 +205,32 @@ public class EzWebView extends FrameLayout {
     }
 
 
-    private void drawPregress(Canvas canvas) {
+    private void showSuccessView() {
+        Log.e("zjw", "   show success");
+        isError = false;
+        errorView.setVisibility(GONE);
+        webView.setVisibility(VISIBLE);
+    }
 
+    @Override
+    public void onClick(View v) {
+        isError =false;
+        reload();
+    }
+
+    private void showErrorView() {
+        errorView.setVisibility(VISIBLE);
+        webView.setVisibility(GONE);
+    }
+
+    private void drawPregress(Canvas canvas) {
         Rect rect = new Rect(getLX(), getLY(), getRX(), getRY());
         canvas.drawRect(rect, progressPaint);
     }
 
     private Rect getReact() {
-        Log.e("zjw", "FRX  :  " + getFRX());
-        Log.e("zjw", "FRY  :  " + getFRY());
-
-
+//        Log.e("zjw", "FRX  :  " + getFRX());
+//        Log.e("zjw", "FRY  :  " + getFRY());
         return new Rect(getLX(), getLY(), getFRX(), getFRY());
     }
 
